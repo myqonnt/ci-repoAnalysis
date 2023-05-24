@@ -142,6 +142,28 @@ func Extract(reader io.Reader, dstDir string, perm fs.FileMode) error {
 	return nil
 }
 
+// 检查目标数据目录是否存在指定数据文件列表, 如果任一指定文件不存在, 则删除目标数据目录
+func existPersistData(dstDir string, filenames []string) bool {
+	for _, filename := range filenames {
+		filePath := filepath.Join(dstDir, filename)
+		fileInfo, err := os.Stat(filePath)
+		if err != nil {
+			Info("File %s does not exist\n", filePath)
+			removeAllFiles(dstDir)
+			return false
+		}
+		Info("File %s exists with size %d bytes and mode %s\n",
+			filePath, fileInfo.Size(), fileInfo.Mode().String())
+	}
+	return true
+}
+
+func removeAllFiles(dstDir string) {
+	err := os.RemoveAll(dstDir)
+	if err != nil {
+		fmt.Printf("Error removing directory %s: %s\n", dstDir, err.Error())
+	}
+}
 func generateImageTar(toolInput *object.ToolInput, downloader Downloader) (*os.File, error) {
 	// 获取manifest
 	manifest, err := loadManifest(&toolInput.FileUrls[0], downloader)
